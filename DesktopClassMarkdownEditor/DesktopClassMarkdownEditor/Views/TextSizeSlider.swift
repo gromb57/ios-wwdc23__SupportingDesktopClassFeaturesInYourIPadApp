@@ -13,8 +13,12 @@ class TextSizeSlider: UISlider {
         super.init(frame: frame)
 
         translatesAutoresizingMaskIntoConstraints = false
+        
+#if !targetEnvironment(macCatalyst)
         minimumValueImage = UIImage(systemName: "textformat.size.smaller")
         maximumValueImage = UIImage(systemName: "textformat.size.larger")
+#endif
+        
         widthAnchor.constraint(equalToConstant: 120.0).isActive = true
         
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(tapped(_:)))
