@@ -90,7 +90,7 @@ class OutlineViewController: UIViewController, UICollectionViewDelegate {
     /// method if the user is performing a multiple selection to invoke a context menu.
     /// - Tag: PrimaryAction
     func collectionView(_ collectionView: UICollectionView, performPrimaryActionForItemAt indexPath: IndexPath) {
-        // Get the element at the indexPath.
+        // Get the element at the `indexPath`.
         if let element = dataSource.itemIdentifier(for: indexPath) {
             delegate?.outline(self, didChoose: element)
         }

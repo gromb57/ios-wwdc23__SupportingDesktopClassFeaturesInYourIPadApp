@@ -4,12 +4,12 @@ Enhance your iPad app by adding desktop-class features and document support.
 
 ## Overview
 
-This sample app shows how to build an iPad app with desktop-class features, 
-focusing on rich document-editing capabilities including 
-a title menu with custom actions, document renaming, Find and Replace, 
-and more.
+This sample project shows how to build an app that takes full advantage 
+of the iPad's desktop-class features like hardware keyboard and trackpad support, 
+Stage Manager, and rich document-editing capabilities. 
 The app is a markup document editor that allows creating, editing, previewing, 
-and saving documents.
+and saving documents, including features like a title menu with custom actions, 
+document renaming, Find and Replace, and more.
 
 - Note: This sample code project is associated with WWDC22 sessions: [10069: Meet desktop class iPad](https://developer.apple.com/wwdc22/10069/), [10070: Build a desktop class iPad app](https://developer.apple.com/wwdc22/10070/), and [10076: Bring your iOS app to the Mac](https://developer.apple.com/wwdc22/10076/).
 
@@ -44,7 +44,7 @@ navigation item's
 property.
 
 ``` swift
-// Set a customizationIdentifier and add center item groups.
+// Set a `customizationIdentifier` and add center item groups.
 navigationItem.customizationIdentifier = "editorViewCustomization"
 ```
 [View in Source](x-source-tag://EditorViewController)
@@ -246,7 +246,7 @@ a multiple selection of tags.
 
 ``` swift
 func collectionView(_ collectionView: UICollectionView, performPrimaryActionForItemAt indexPath: IndexPath) {
-    // Get the element at the indexPath.
+    // Get the element at the `indexPath`.
     if let element = dataSource.itemIdentifier(for: indexPath) {
         delegate?.outline(self, didChoose: element)
     }

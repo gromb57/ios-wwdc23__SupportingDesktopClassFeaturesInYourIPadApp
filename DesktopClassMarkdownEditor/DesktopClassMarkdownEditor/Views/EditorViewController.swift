@@ -87,7 +87,7 @@ class EditorViewController: UIViewController,
         // `renameDelegate`.
         navigationItem.renameDelegate = self
         
-        // Set a customizationIdentifier and add center item groups.
+        // Set a `customizationIdentifier` and add center item groups.
         navigationItem.customizationIdentifier = "editorViewCustomization"
         configureCenterItemGroups()
         
