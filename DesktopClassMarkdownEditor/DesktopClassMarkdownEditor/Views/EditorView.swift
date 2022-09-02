@@ -41,13 +41,13 @@ class EditorView: UITextView {
     
     func textSizeMenu() -> UIMenu {
         return UIMenu(title: "Text Size", options: .displayInline, preferredElementSize: .small, children: [
-            UIAction(title: "Increase", image: UIImage(systemName: "minus.magnifyingglass"), attributes: .keepsMenuPresented) { [unowned self] _ in
+            UIAction(title: "Decrease", image: UIImage(systemName: "minus.magnifyingglass"), attributes: .keepsMenuPresented) { [unowned self] _ in
                 updateFontScale(fontScale - fontScaleStep)
             },
             UIAction(title: "Reset", image: UIImage(systemName: "1.magnifyingglass"), attributes: .keepsMenuPresented) { [unowned self] _ in
                 updateFontScale(1.0)
             },
-            UIAction(title: "Decrease", image: UIImage(systemName: "plus.magnifyingglass"), attributes: .keepsMenuPresented) { [unowned self] _ in
+            UIAction(title: "Increase", image: UIImage(systemName: "plus.magnifyingglass"), attributes: .keepsMenuPresented) { [unowned self] _ in
                 updateFontScale(fontScale + fontScaleStep)
             }
         ])
