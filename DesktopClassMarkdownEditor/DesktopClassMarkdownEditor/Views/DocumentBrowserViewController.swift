@@ -1,5 +1,5 @@
 /*
-See LICENSE folder for this sample’s licensing information.
+See the LICENSE.txt file for this sample’s licensing information.
 
 Abstract:
 The view controller that handles document management operations like
@@ -78,7 +78,7 @@ class DocumentBrowserViewController: UIDocumentBrowserViewController, UIDocument
     }
     
     // MARK: Document Presentation
-    
+
     func presentDocument(_ documentURL: URL) {
         let document = MarkdownDocument(fileURL: documentURL)
         let splitVC = SplitViewController(document: document)
@@ -86,18 +86,11 @@ class DocumentBrowserViewController: UIDocumentBrowserViewController, UIDocument
         splitVC.transitioningDelegate = self
         splitVC.modalPresentationStyle = .fullScreen
         splitVC.editorViewController.documentBrowser = self
-        
+
         transitionController = transitionController(forDocumentAt: documentURL)
         transitionController?.targetView = splitVC.editorViewController.navigationController?.view
 
-        Task {
-            do {
-                try await splitVC.openDocument()
-                self.present(splitVC, animated: true)
-            } catch {
-                print("Failed to open document: \(error)")
-            }
-        }
+        self.present(splitVC, animated: true)
     }
     
     // MARK: UIViewControllerTransitioningDelegate

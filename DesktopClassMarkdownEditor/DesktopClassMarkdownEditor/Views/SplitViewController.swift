@@ -1,5 +1,5 @@
 /*
-See LICENSE folder for this sample’s licensing information.
+See the LICENSE.txt file for this sample’s licensing information.
 
 Abstract:
 The split view controller that manages the presentation of the document outline
@@ -52,17 +52,6 @@ class SplitViewController: UISplitViewController, EditorViewControllerDelegate, 
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    func openDocument() async throws {
-        guard document.documentState == .closed else {
-            return
-        }
-        let success = await document.open()
-        guard success else {
-            throw SplitViewError.documentFailedToOpen
-        }
-        editorViewController.didOpenDocument()
     }
     
     // MARK: EditorViewControllerDelegate

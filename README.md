@@ -26,12 +26,6 @@ navigation item's
 [`style`](https://developer.apple.com/documentation/uikit/uinavigationitem/3987969-style) 
 property. 
 
-``` swift
-// Adopt the editor navigation style for the navigation item.
-navigationItem.style = .editor
-```
-[View in Source](x-source-tag://EditorViewController)
-
 ## Add center items for quick access to common actions
 
 Center item groups are groups of controls that appear in the 
@@ -124,46 +118,6 @@ the editor view controller assigns a
 object to the navigation item’s 
 [`documentProperties`](https://developer.apple.com/documentation/uikit/uinavigationitem/3967521-documentproperties)
 property. 
-
-``` swift
-let documentProperties = UIDocumentProperties(url: document.fileURL)
-if let itemProvider = NSItemProvider(contentsOf: document.fileURL) {
-    documentProperties.dragItemsProvider = { _ in
-        [UIDragItem(itemProvider: itemProvider)]
-    }
-    documentProperties.activityViewControllerProvider = {
-        UIActivityViewController(activityItems: [itemProvider], applicationActivities: nil)
-    }
-}
-
-navigationItem.title = document.localizedName
-navigationItem.documentProperties = documentProperties
-```
-[View in Source](x-source-tag://DocumentHeader)
-
-## Implement document renaming
-
-[`UINavigationItem`](https://developer.apple.com/documentation/uikit/uinavigationitem)
-provides support for quickly changing the item's title using a system UI. 
-To enable the system rename UI, the editor view controller adopts the 
-`UINavigationItemRenameDelegate`
-protocol and assigns itself as the navigation item's rename delegate using the
-[`renameDelegate`](https://developer.apple.com/documentation/uikit/uinavigationitem/3967522-renamedelegate)
-property.
-
-``` swift
-// Enable the bar's built-in rename UI by setting the navigation item's
-// `renameDelegate`.
-navigationItem.renameDelegate = self
-```
-[View in Source](x-source-tag://EditorViewController)
-
-The Rename action appears in the title menu as one of the system-suggested 
-actions. When a person taps the Rename action, the system shows an inline 
-text field UI for changing the navigation item’s title.
-After a person completes renaming the item in the UI, the system calls 
-[`navigationItem(_:didEndRenamingWith:)`](https://developer.apple.com/documentation/uikit/uinavigationitemrenamedelegate/3967525-navigationitem)
-to perform the corresponding naming updates in the data model.
 
 ## Enable the system Find and Replace experience
 

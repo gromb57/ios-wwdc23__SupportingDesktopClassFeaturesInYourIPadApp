@@ -1,5 +1,5 @@
 /*
-See LICENSE folder for this sample’s licensing information.
+See the LICENSE.txt file for this sample’s licensing information.
 
 Abstract:
 The view controller that configures and manages operations in the
@@ -11,19 +11,36 @@ import UIKit
 protocol EditorViewControllerDelegate: AnyObject {
     func editor(_ editorViewController: EditorViewController, didParse document: ParsedDocument)
 }
-class EditorViewController: UIViewController,
-        UINavigationItemRenameDelegate,
+class EditorViewController: UIDocumentViewController,
         UITextViewDelegate,
         UIDocumentPickerDelegate,
         UIImagePickerControllerDelegate,
         UINavigationControllerDelegate {
 
+    var markdownDocument: MarkdownDocument? {
+        self.document as? MarkdownDocument
+    }
+    override var document: UIDocument? {
+        didSet {
+            guard let document = markdownDocument else { return }
+            document.didUpdateHandler = { document, adjustedSelectionRange in
+                self.editorTextView.text = document.text
+
+                // Adjust selected range.
+                if let newSelectionRange = adjustedSelectionRange {
+                    self.editorTextView.selectedRange = newSelectionRange
+                }
+
+                // Manually trigger a parser update, since textViewDidChange(_:) won't be called.
+                self.updatePreview()
+            }
+        }
+    }
     let editorTextView = EditorView()
     let previewView = PreviewView()
     let parser = Parser()
     let updateQueue = OperationQueue()
-    let document: MarkdownDocument
-
+    
     var scrollSyncSource: UIScrollView?
     
     weak var delegate: EditorViewControllerDelegate?
@@ -42,27 +59,6 @@ class EditorViewController: UIViewController,
         }
     }
     
-    init(document: MarkdownDocument) {
-        self.document = document
-        super.init(nibName: nil, bundle: nil)
-        
-        self.document.didUpdateHandler = { document, adjustedSelectionRange in
-            self.editorTextView.text = document.text
-            
-            // Adjust selected range.
-            if let newSelectionRange = adjustedSelectionRange {
-                self.editorTextView.selectedRange = newSelectionRange
-            }
-            
-            // Manually trigger a parser update, since textViewDidChange(_:) won't be called.
-            self.updatePreview()
-        }
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
     // MARK: UIViewController Overrides
     
     override func loadView() {
@@ -73,25 +69,6 @@ class EditorViewController: UIViewController,
     /// - Tag: EditorViewController
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        // Adopt the editor navigation style for the navigation item.
-        navigationItem.style = .editor
-        
-        // Set a custom back action that dismisses the editor and returns
-        // to the document browser.
-        navigationItem.backAction = UIAction(title: "Documents") { [unowned self] _ in
-            dismiss(animated: true)
-        }
-        
-        // Enable the bar's built-in rename UI by setting the navigation item's
-        // `renameDelegate`.
-        navigationItem.renameDelegate = self
-        
-        // Set a `customizationIdentifier` and add center item groups.
-        navigationItem.customizationIdentifier = "editorViewCustomization"
-        configureCenterItemGroups()
-        
-        navigationItem.rightBarButtonItem = splitView.previewVisibilityBarButton
 
         // Enable Find and Replace in editor text view and register as its
         // delegate.
@@ -100,8 +77,29 @@ class EditorViewController: UIViewController,
         
         splitView.panels = [ editorTextView, previewView ]
         previewView.webView.scrollView.delegate = self
+
+        configureViewForCurrentDocument()
     }
-    
+
+    override func navigationItemDidUpdate() {
+        // Set a `customizationIdentifier` and add center item groups.
+        navigationItem.customizationIdentifier = "editorViewCustomization"
+        configureCenterItemGroups()
+
+        navigationItem.rightBarButtonItem = splitView.previewVisibilityBarButton
+
+        if document == nil || document!.documentState.contains(.closed) {
+            for group in navigationItem.centerItemGroups {
+                for item in group.barButtonItems {
+                    item.isEnabled = false
+                }
+            }
+            splitView.previewVisibilityBarButton.isEnabled = false
+        } else {
+            splitView.previewVisibilityBarButton.isEnabled = true
+        }
+    }
+
     override func viewLayoutMarginsDidChange() {
         super.viewLayoutMarginsDidChange()
 
@@ -149,29 +147,19 @@ class EditorViewController: UIViewController,
         updatePreview()
     }
     
-    // MARK: UINavigationItemRenameDelegate
-    
-    /// The system calls this method when a rename interaction in the bar ends.
-    /// Perform the actual rename here.
-    func navigationItem(_ navigationItem: UINavigationItem, didEndRenamingWith title: String) {
-        documentBrowser?.renameDocument(at: document.fileURL, proposedName: title) { [unowned self] url, error in
-            // The rename interaction automatically updates the navigation item's title.
-            // If renaming fails for any reason, restore the title to the document's old name.
-            if error != nil {
-                self.navigationItem.title = self.document.localizedName
-            }
-        }
-    }
-    
     // MARK: Title Menu Actions
     
     override func duplicate(_ sender: Any?) {
+        guard let document = markdownDocument else { return }
+
         let picker = UIDocumentPickerViewController(forExporting: [document.fileURL], asCopy: true)
         picker.delegate = self
         present(picker, animated: true)
     }
 
     override func move(_ sender: Any?) {
+        guard let document = markdownDocument else { return }
+
         let picker = UIDocumentPickerViewController(forExporting: [document.fileURL])
         picker.delegate = self
         present(picker, animated: true)
@@ -210,7 +198,7 @@ class EditorViewController: UIViewController,
                 insertTag(.heading(3))
             })
         ]
-        
+
         navigationItem.centerItemGroups = [
             UIBarButtonItem(primaryAction: UIAction(title: "Sync Scrolling", image: syncScrollingImage) { [unowned self] action in
                 syncScrolling.toggle()
@@ -267,10 +255,18 @@ class EditorViewController: UIViewController,
                            items: headingItems)
         ]
     }
-    
+
     // MARK: Document Management
     /// - Tag: TitleMenu
-    func didOpenDocument() {
+    override func documentDidOpen() {
+        configureViewForCurrentDocument()
+    }
+
+    func configureViewForCurrentDocument() {
+        guard let document = markdownDocument,
+              !document.documentState.contains(.closed)
+                && isViewLoaded else { return }
+
         document.undoManager = editorTextView.undoManager
         document.willSaveHandler = {
             self.editorTextView.text
@@ -278,8 +274,7 @@ class EditorViewController: UIViewController,
 
         editorTextView.text = document.text
         updatePreview()
-        
-        updateDocumentProperties()
+
         navigationItem.titleMenuProvider = { suggested in
             let custom = [
                 UIMenu(title: "Export…", image: UIImage(systemName: "arrow.up.forward.square"), children: [
@@ -294,23 +289,7 @@ class EditorViewController: UIViewController,
             return UIMenu(children: suggested + custom)
         }
     }
-    
-    /// - Tag: DocumentHeader
-    private func updateDocumentProperties() {
-        let documentProperties = UIDocumentProperties(url: document.fileURL)
-        if let itemProvider = NSItemProvider(contentsOf: document.fileURL) {
-            documentProperties.dragItemsProvider = { _ in
-                [UIDragItem(itemProvider: itemProvider)]
-            }
-            documentProperties.activityViewControllerProvider = {
-                UIActivityViewController(activityItems: [itemProvider], applicationActivities: nil)
-            }
-        }
-        
-        navigationItem.title = document.localizedName
-        navigationItem.documentProperties = documentProperties
-    }
-    
+
     // MARK: UIDocumentPickerDelegate
     
     /// The app uses `UIDocumentPickerViewController` to move and duplicate documents.
@@ -325,9 +304,6 @@ class EditorViewController: UIViewController,
             if let url = urls.first {
                 insertImage(url)
             }
-        } else {
-            // Make sure the title menu's document properties header is up to date.
-            updateDocumentProperties()
         }
     }
     
@@ -348,12 +324,14 @@ class EditorViewController: UIViewController,
     // MARK: Internal
     
     private func updatePreview() {
+        guard let document = markdownDocument else { return }
+
         if splitView.splitSize > 0, let markdownText = self.editorTextView.text {
             updateQueue.cancelAllOperations()
             updateQueue.addOperation {
                 let parsedDocument = self.parser.parse(markdownText)
             
-                self.document.parsedDocument = parsedDocument
+                document.parsedDocument = parsedDocument
                 
                 DispatchQueue.main.async {
                     self.previewView.webView.loadHTMLString(parsedDocument.html, baseURL: Bundle.main.resourceURL)
@@ -400,6 +378,8 @@ class EditorViewController: UIViewController,
     }
     
     private func insertTag(_ tag: MarkdownTag, onlyIfSelected: Bool = false) {
+        guard let document = markdownDocument else { return }
+
         let selectedRange = editorTextView.selectedRange
         if !onlyIfSelected || selectedRange.length > 0 {
             document.insertTag(tag, at: selectedRange)
@@ -407,6 +387,8 @@ class EditorViewController: UIViewController,
     }
     
     private func insertImage(_ url: URL) {
+        guard let document = markdownDocument else { return }
+
         let docsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let toURL = docsDir.appendingPathComponent(url.lastPathComponent)
         
