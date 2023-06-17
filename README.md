@@ -1,5 +1,7 @@
 # Supporting desktop-class features in your iPad app
 
+[Source](https://developer.apple.com/documentation/uikit/app_and_environment/supporting_desktop-class_features_in_your_ipad_app)
+
 Enhance your iPad app by adding desktop-class features and document support.
 
 ## Overview
